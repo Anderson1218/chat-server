@@ -20,6 +20,6 @@ router.delete("/:id", auth, usersController.deleteUser);
 router.post("/token", usersController.signin);
 
 //# Profile of logged in user
-// router.get("/me", auth, usersController.getUserProfile);
+router.get("/me", auth, usersController.getUserProfile);
 
 module.exports = router;
