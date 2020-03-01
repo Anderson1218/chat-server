@@ -11,51 +11,67 @@ module.exports.createUser = async (req, res) => {
       password: hash,
       role: "general"
     });
-    console.log("user's auto-generated ID:", user.id);
-    res.send("uid is " + user.id);
+    delete user.dataValues.password;
+    res.send(user.dataValues);
   } catch (err) {
-    res.status(405).send();
-    console.log(err);
+    res.status(405).send(err.toString());
   }
 };
 
 module.exports.getAllUsers = async (req, res) => {
-  console.log(req.headers);
   try {
+    if (!req.user.isAdmin) {
+      throw new Error("Permission denied, please login as administrator");
+    }
     const data = await User.findAll();
     const users = data.map(user => user.dataValues);
+    users.forEach(user => {
+      delete user.password;
+    });
     res.send(users);
   } catch (err) {
-    console.log(err);
+    res.status(401).send(err.toString());
   }
 };
 
-module.exports.updateUser = (req, res) => {
-  User.update(
-    { password: "kkkk" },
-    {
-      where: {
-        email: "app2@gmail.com"
-      }
+//update user's password
+module.exports.updateUser = async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      throw new Error("Permission denied, please login as administrator");
     }
-  )
-    .then(() => {
-      res.send("update password success");
-    })
-    .catch(err => console.log(err));
+    const { password } = req.body;
+    const { id } = req.params;
+    const hash = await bcrypt.hash(password, 8);
+    const info = await User.update(
+      { password: hash },
+      {
+        where: {
+          id: id
+        }
+      }
+    );
+    res.json("Updating password success");
+  } catch (err) {
+    res.status(401).send(err.toString());
+  }
 };
 
-module.exports.deleteUser = (req, res) => {
-  User.destroy({
-    where: {
-      email: "app2@gmail.com"
+module.exports.deleteUser = async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      throw new Error("Permission denied, please login as administrator");
     }
-  })
-    .then(() => {
-      console.log("Done");
-      res.send("delete success");
-    })
-    .catch(err => console.log(err));
+    const { id } = req.params;
+    const info = await User.destroy({
+      where: {
+        id: id
+      }
+    });
+    res.send("Deleting user success");
+  } catch (err) {
+    res.status(401).send(err.toString());
+  }
 };
 
 module.exports.signin = async (req, res) => {
@@ -66,11 +82,11 @@ module.exports.signin = async (req, res) => {
     }
     const user = await User.findOne({ where: { email: email } });
     if (!user) {
-      return res.send("user does not exist");
+      throw new Error("user not exist");
     }
     const isMatch = await bcrypt.compare(password, user.dataValues.password);
     if (!isMatch) {
-      res.send("signin fail");
+      throw new Error("password is wrong");
     } else {
       const token = jwt.sign(
         {
@@ -83,9 +99,9 @@ module.exports.signin = async (req, res) => {
           expiresIn: 86400 // expires in 24 hours
         }
       );
-      res.send(token);
+      res.json(token);
     }
   } catch (err) {
-    res.send("something wrong");
+    res.status(401).send(err.toString());
   }
 };

@@ -11,12 +11,12 @@ router.post("/", usersController.createUser);
 router.get("/", auth, usersController.getAllUsers);
 
 //update user
-router.put("/:id", usersController.updateUser);
+router.put("/:id", auth, usersController.updateUser);
 
-//delete a existing user
-router.delete("/:id", usersController.deleteUser);
+//delete an existing user
+router.delete("/:id", auth, usersController.deleteUser);
 
-//login
+//signin
 router.post("/token", usersController.signin);
 
 //# Profile of logged in user
