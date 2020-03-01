@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 module.exports.createUser = async (req, res) => {
   try {
@@ -57,17 +58,34 @@ module.exports.deleteUser = (req, res) => {
     .catch(err => console.log(err));
 };
 
-module.exports.signin = (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    throw new Error("email and password shouldn't be empty");
-  }
-  console.log(email, password);
-  User.findOne({ where: { email: email } }).then(user => {
-    if (!user) {
-      res.send("user not exist");
-    } else {
-      res.send("user exist");
+module.exports.signin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      throw new Error("email and password shouldn't be empty");
     }
-  });
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) {
+      return res.send("user does not exist");
+    }
+    const isMatch = await bcrypt.compare(password, user.dataValues.password);
+    if (!isMatch) {
+      res.send("signin fail");
+    } else {
+      const token = jwt.sign(
+        {
+          id: user.dataValues.id,
+          email: user.dataValues.email,
+          role: user.dataValues.role
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: 86400 // expires in 24 hours
+        }
+      );
+      res.send(token);
+    }
+  } catch (err) {
+    res.send("something wrong");
+  }
 };
