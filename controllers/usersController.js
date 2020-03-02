@@ -5,6 +5,9 @@ const jwt = require("jsonwebtoken");
 module.exports.createUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      throw new Error("email and password shouldn't be empty");
+    }
     const hash = await bcrypt.hash(password, 8);
     const user = await User.create({
       email: email,

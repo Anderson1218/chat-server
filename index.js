@@ -2,13 +2,14 @@ const path = require("path");
 const http = require("http");
 const express = require("express");
 const socketio = require("socket.io");
+const cors = require("cors");
 /* Loads all variables from .env file to "process.env" */
 require("dotenv").config();
 const db = require("./config/database");
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 db.authenticate()
   .then(() => console.log("db connect success"))
@@ -16,6 +17,7 @@ db.authenticate()
 
 const publicDirectoryPath = path.join(__dirname, "/public");
 
+app.use(cors());
 app.use(express.static(publicDirectoryPath));
 app.use(express.json());
 
