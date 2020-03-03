@@ -26,7 +26,9 @@ module.exports.getAllUsers = async (req, res) => {
       throw new Error("Permission denied, please login as administrator");
     }
     const data = await User.findAll();
-    const users = data.map(user => user.dataValues);
+    const users = data
+      .map(user => user.dataValues)
+      .filter(user => user.role === "general");
     users.forEach(user => {
       delete user.password;
     });
